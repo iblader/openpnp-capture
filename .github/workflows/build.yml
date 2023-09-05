@@ -76,7 +76,45 @@ jobs:
             artifacts: "deploy/*"
             token: ${{ secrets.GITHUB_TOKEN }}
             allowUpdates: true
+  windows_x86_32: 
+    strategy:
+      matrix:
+        os: [windows-latest]
+        arch: [x86_32]
 
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+
+      - name: Build
+        run: |
+          mkdir build
+          mkdir deploy
+          cd build
+          cmake ..
+          cmake --build . --config Release
+          cd ..
+          cp build/win/tests/Release/openpnp-capture-test.exe deploy/openpnp-capture-test-${{ matrix.os }}-${{ matrix.arch }}.exe
+          cp build/Release/openpnp-capture.dll deploy/libopenpnp-capture-${{ matrix.os }}-${{ matrix.arch }}.dll
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with: 
+          path: |
+            deploy/*
+            
+      - name: Create Release
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
+        with:
+            artifacts: "deploy/*"
+            token: ${{ secrets.GITHUB_TOKEN }}
+            allowUpdates: true
+            
   windows_x86_64: 
     strategy:
       matrix:
